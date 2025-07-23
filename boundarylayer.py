@@ -1,47 +1,62 @@
-#simple code to solve for boundary layer 
-#no inputs, keep it as simple as possible
+# Simple boundary layer thickness calculator for cobalt and nickel
+# Assumes laminar flow in a rectangular channel
 
-#mew is the viscosity of water in SI units
-mew = 0.001 # viscosity of water in Pa.s (SI units)
+# === Parameters ===
+mu = 0.001               # Dynamic viscosity of water (Pa·s)
+rho = 1000               # Density of water (kg/m³)
 
-#rho is the density of water in SI units
-rho = 1000 # density of water in kg/m^3 (SI units)
+# Geometry
+gasket_height_in = 1/32  # Gasket height (inches)
+h = gasket_height_in * 0.0254   # Gasket height (m)
+l = 0.03                        # Channel width (m)
+L = 0.1                         # Channel length (m)
 
-#u is the liquid velocity
-u = 1.0 # velocity of water in m/s (SI units)
+# Flow
+flow_rate_ml_min = 10          # Flow rate (mL/min)
 
-#dH is the hydraulic diameter
-h = 0.00079375 #in meters
-l = 0.03 #in meters
-perimeter = 2*(l+h)
-xarea = l * h
-dH = (4 * xarea)/perimeter
+# Diffusivity values (m²/s)
+D_cobalt = 0.72e-9
+D_nickel = 0.69e-9
 
-#calculate reynolds number, ensure it is below 2000 to ensure laminar flow
-Re = (rho * u * dH) / mew 
+# === Calculations ===
+
+# Convert flow rate to m³/s
+flow_rate_m3_s = flow_rate_ml_min / 1e6 / 60
+
+# Cross-sectional area (m²) and velocity (m/s)
+cross_section_area = l * h
+u = flow_rate_m3_s / cross_section_area
+
+# Hydraulic diameter (m)
+perimeter = 2 * (l + h)
+dH = 4 * cross_section_area / perimeter
+
+# Reynolds number (dimensionless)
+Re = (rho * u * dH) / mu
 print(f"Reynolds number: {Re:.2f}")
 if Re > 2000:
-    print("Reynolds number is above 2000, flow is not laminar.")
+    print("Reynolds number exceeds 2000, flow may not be laminar.")
 
-#calculate Schmidt number
-#diffusivity of cobalt in water
-D_cobalt = 0.72 * 10**-9 # diffusivity in m^2/s
+# Schmidt numbers (dimensionless)
+Sc_cobalt = mu / (rho * D_cobalt)
+Sc_nickel = mu / (rho * D_nickel)
 
-#diffusivity of nickel in water
-D_nickel = 0.69 * 10**-9 # diffusivity in m^2/s
+# Boundary layer thicknesses (m)
+Sh_cobalt = 1.85 * ((Re * Sc_cobalt * dH / L) ** (1/3))
+Sh_nickel = 1.85 * ((Re * Sc_nickel * dH / L) ** (1/3))
 
-Sc_cobalt = mew / (rho * D_cobalt) # Schmidt number for cobalt
-Sc_nickel = mew / (rho * D_nickel) # Schmidt number for nickel
+boundary_layer_cobalt = dH / Sh_cobalt
+boundary_layer_nickel = dH / Sh_nickel
 
-#solving for boundary layer thickness
-# Sh = 1.85 * (Re**(1/3)) * (Sc_cobalt**(1/3)) # Sherwood number for cobalt
-L = 0.1 #in meters length of the channel
-boundary_l_t_cobalt = dH/(1.85 * ((Re*Sc_cobalt *dH/L)**(1/3))) 
-boundary_l_t_nickel = dH/(1.85 * ((Re*Sc_nickel *dH/L)**(1/3)))
+# === Output ===
+print(f"Boundary layer thickness (Co²⁺): {boundary_layer_cobalt:.9f} m")
+print(f"Boundary layer thickness (Ni²⁺): {boundary_layer_nickel:.9f} m")
 
-print(f"Boundary layer thickness for cobalt: {boundary_l_t_cobalt:.9f} m")
-print(f"Boundary layer thickness for nickel: {boundary_l_t_nickel:.9f} m")
-# Note: The above code assumes that the user has a basic understanding of fluid dynamics and the relevant equations.
+# Percent of a reference thickness (1/64 inch = 0.0015875 m)
+ref_thickness = 0.0015875
+print(f"Co²⁺ layer as % of 1/64 inch: {boundary_layer_cobalt / ref_thickness * 100:.2f}%")
+print(f"Ni²⁺ layer as % of 1/64 inch: {boundary_layer_nickel / ref_thickness * 100:.2f}%")
 
-
-
+# Optional: print Schmidt numbers
+print(f"Schmidt number (Co²⁺): {Sc_cobalt:.2f}")
+print(f"Schmidt number (Ni²⁺): {Sc_nickel:.2f}")
